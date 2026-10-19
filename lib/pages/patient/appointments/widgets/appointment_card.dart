@@ -16,17 +16,22 @@ class AppointmentCard extends StatelessWidget {
     String statusText;
 
     switch (appointment.status) {
-      case "accepted":
+      case 'accepted':
+      case 'confirmed':
         statusColor = Colors.green;
-        statusText = "مؤكد";
+        statusText = 'مؤكد';
         break;
-      case "cancelled":
+      case 'cancelled':
         statusColor = Colors.red;
-        statusText = "ملغى";
+        statusText = 'ملغى';
+        break;
+      case 'completed':
+        statusColor = Colors.blue;
+        statusText = 'مكتمل';
         break;
       default:
         statusColor = Colors.orange;
-        statusText = "قيد الانتظار";
+        statusText = 'قيد الانتظار';
     }
 
     return Container(
@@ -39,7 +44,6 @@ class AppointmentCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Container(
                 padding: const EdgeInsets.symmetric(
@@ -60,10 +64,13 @@ class AppointmentCard extends StatelessWidget {
                   ),
                 ),
               ),
+              const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   appointment.doctorName,
                   textAlign: TextAlign.right,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontSize: 17,
                     fontWeight: FontWeight.bold,
@@ -73,42 +80,49 @@ class AppointmentCard extends StatelessWidget {
               ),
             ],
           ),
-
           const SizedBox(height: 10),
-
+          if (appointment.doctorSpeciality != null &&
+              appointment.doctorSpeciality!.trim().isNotEmpty) ...[
+            AppointmentInfoRow(
+              icon: Icons.medical_services_outlined,
+              text: appointment.doctorSpeciality!,
+            ),
+            const SizedBox(height: 7),
+          ],
           AppointmentInfoRow(
             icon: Icons.calendar_today_outlined,
             text: appointment.date,
           ),
-
           const SizedBox(height: 7),
-
           AppointmentInfoRow(
             icon: Icons.access_time_outlined,
             text: appointment.time,
           ),
-
           const SizedBox(height: 7),
-
           AppointmentInfoRow(
             icon: Icons.person_outline,
             text: 'اسم المريض: ${appointment.patientName}',
           ),
-
-          const SizedBox(height: 7),
-
-          AppointmentInfoRow(
-            icon: Icons.location_on_outlined,
-            text: appointment.location ?? 'العيادة',
-          ),
-
-          if (appointment.status != "cancelled") ...[
+          if (appointment.location != null &&
+              appointment.location!.trim().isNotEmpty) ...[
+            const SizedBox(height: 7),
+            AppointmentInfoRow(
+              icon: Icons.location_on_outlined,
+              text: appointment.location!,
+            ),
+          ],
+          if (appointment.status == 'pending' && onCancel != null) ...[
             const SizedBox(height: 12),
             SizedBox(
               width: double.infinity,
-              height: 40,
-              child: ElevatedButton(
+              height: 42,
+              child: ElevatedButton.icon(
                 onPressed: onCancel,
+                icon: const Icon(Icons.close, size: 18),
+                label: const Text(
+                  'إلغاء الحجز',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFFF4968),
                   foregroundColor: Colors.white,
@@ -116,10 +130,6 @@ class AppointmentCard extends StatelessWidget {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(25),
                   ),
-                ),
-                child: const Text(
-                  'إلغاء الحجز',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
                 ),
               ),
             ),

@@ -18,44 +18,27 @@ class PatientHomePage extends StatelessWidget {
     return ChangeNotifierProvider<HomeProvider>(
       create: (context) => HomeProvider()..getDoctors(),
       child: Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: const Color(0xFFFAFCFE),
         body: SafeArea(
           child: Column(
             children: [
               const HomeHeader(),
-
               Expanded(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.only(
-                    left: 16,
-                    right: 16,
-                    bottom: 20,
-                  ),
+                  padding: const EdgeInsets.fromLTRB(18, 8, 18, 24),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const SizedBox(height: 20),
-
                       const WelcomeSection(),
-
-                      const SizedBox(height: 20),
-
+                      const SizedBox(height: 22),
                       const SearchBarWidget(),
-
-                      const SizedBox(height: 20),
-
+                      const SizedBox(height: 28),
                       const SectionTitle(title: 'التخصصات'),
-
-                      const SizedBox(height: 12),
-
+                      const SizedBox(height: 14),
                       const SpecialitiesSection(),
-
-                      const SizedBox(height: 24),
-
+                      const SizedBox(height: 28),
                       const SectionTitle(title: 'الأعلى تقييمًا'),
-
-                      const SizedBox(height: 12),
-
+                      const SizedBox(height: 14),
                       const TopDoctorsSection(),
                     ],
                   ),

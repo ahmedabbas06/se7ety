@@ -12,12 +12,13 @@ class WelcomeSection extends StatelessWidget {
     return Consumer<AuthProvider>(
       builder: (context, authProvider, child) {
         final userName = authProvider.userData?.name;
+
         final welcomeText = (userName != null && userName.isNotEmpty)
             ? 'مرحباً، $userName'
             : 'مرحباً بك';
 
         return Column(
-          crossAxisAlignment: CrossAxisAlignment.end,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
               welcomeText,

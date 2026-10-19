@@ -18,31 +18,67 @@ class DoctorDetailsPage extends StatelessWidget {
     return ChangeNotifierProvider<AppointmentProvider>(
       create: (_) => AppointmentProvider(),
       child: Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: const Color(0xFFF7F9FC),
         body: SafeArea(
           child: Column(
             children: [
               const DoctorHeader(),
-
               Expanded(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       DoctorInfoSection(doctor: doctor),
+                      const SizedBox(height: 24),
+                      Builder(
+                        builder: (context) {
+                          return BookingButton(
+                            onPressed: () {
+                              final appointmentProvider =
+                                  Provider.of<AppointmentProvider>(
+                                    context,
+                                    listen: false,
+                                  );
 
-                      const SizedBox(height: 25),
-
-                      BookingButton(
-                        onPressed: () {
-                          showDialog(
-                            context: context,
-                            builder: (_) => BookingDialog(doctor: doctor),
+                              showDialog(
+                                context: context,
+                                barrierDismissible: false,
+                                builder: (dialogContext) {
+                                  return ChangeNotifierProvider<
+                                    AppointmentProvider
+                                  >.value(
+                                    value: appointmentProvider,
+                                    child: BookingDialog(doctor: doctor),
+                                  );
+                                },
+                              );
+                            },
                           );
                         },
                       ),
-
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 12),
+                      const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.verified_user_outlined,
+                            size: 16,
+                            color: Colors.grey,
+                          ),
+                          SizedBox(width: 6),
+                          Flexible(
+                            child: Text(
+                              'تأكد من بيانات الموعد قبل تأكيد الحجز',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ],
                   ),
                 ),

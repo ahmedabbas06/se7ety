@@ -23,41 +23,41 @@ class AppointmentModel {
     required this.date,
     required this.time,
     this.location,
-    this.status = "pending",
+    this.status = 'pending',
     this.createdAt,
   });
 
   factory AppointmentModel.fromMap(Map<String, dynamic> data, String docId) {
     return AppointmentModel(
       id: docId,
-      doctorId: data["doctorId"] ?? "",
-      doctorName: data["doctorName"] ?? "",
-      doctorSpeciality: data["doctorSpeciality"],
-      patientId: data["patientId"] ?? "",
-      patientName: data["patientName"] ?? "",
-      patientPhone: data["patientPhone"],
-      date: data["date"] ?? "",
-      time: data["time"] ?? "",
-      location: data["location"],
-      status: data["status"] ?? "pending",
-      createdAt: data["createdAt"],
+      doctorId: data['doctorId']?.toString() ?? '',
+      doctorName: data['doctorName']?.toString() ?? '',
+      doctorSpeciality: data['doctorSpeciality']?.toString(),
+      patientId: data['patientId']?.toString() ?? '',
+      patientName: data['patientName']?.toString() ?? '',
+      patientPhone: data['patientPhone']?.toString(),
+      date: data['date']?.toString() ?? '',
+      time: data['time']?.toString() ?? '',
+      location: data['location']?.toString(),
+      status: data['status']?.toString() ?? 'pending',
+      createdAt: data['createdAt'],
     );
   }
 
   Map<String, dynamic> toMap() {
     return {
-      "id": id,
-      "doctorId": doctorId,
-      "doctorName": doctorName,
-      if (doctorSpeciality != null) "doctorSpeciality": doctorSpeciality,
-      "patientId": patientId,
-      "patientName": patientName,
-      if (patientPhone != null) "patientPhone": patientPhone,
-      "date": date,
-      "time": time,
-      if (location != null) "location": location,
-      "status": status,
-      if (createdAt != null) "createdAt": createdAt,
+      'id': id,
+      'doctorId': doctorId,
+      'doctorName': doctorName,
+      'doctorSpeciality': doctorSpeciality,
+      'patientId': patientId,
+      'patientName': patientName,
+      'patientPhone': patientPhone,
+      'date': date,
+      'time': time,
+      'location': location,
+      'status': status,
+      'createdAt': createdAt,
     };
   }
 }

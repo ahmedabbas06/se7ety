@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/constants/app_colors.dart';
 import '../../providers/auth_provider.dart';
 import '../OnBoarding/onboarding_page.dart';
+import '../choice/choice_page.dart';
 import '../doctor/home/doctor_home_page.dart';
 import '../patient/home/patient_home_page.dart';
 
@@ -21,7 +23,24 @@ class AuthGate extends StatelessWidget {
         }
 
         if (authProvider.currentUser == null) {
-          return OnBoardingScreen();
+          return FutureBuilder<SharedPreferences>(
+            future: SharedPreferences.getInstance(),
+            builder: (context, snapshot) {
+              if (!snapshot.hasData) {
+                return const Scaffold(
+                  body: Center(child: CircularProgressIndicator()),
+                );
+              }
+              final onboardingCompleted =
+                  snapshot.data!.getBool('onboardingCompleted') ?? false;
+
+              if (onboardingCompleted) {
+                return  ChoiceScreen();
+              } else {
+                return  OnBoardingScreen();
+              }
+            },
+          );
         }
 
         if (authProvider.userData == null) {
@@ -36,11 +55,23 @@ class AuthGate extends StatelessWidget {
           );
         }
 
-        if (authProvider.userData!.role == "doctor") {
+        if (authProvider.userData!.role == 'doctor') {
           return DoctorHomePage();
-        } else {
+        }
+
+        if (authProvider.userData!.role == 'patient') {
           return PatientHomePage();
         }
+
+        return AuthErrorView(
+          errorMessage: 'نوع الحساب غير معروف.',
+          onRetry: () {
+            authProvider.checkCurrentUser();
+          },
+          onLogout: () {
+            authProvider.logout();
+          },
+        );
       },
     );
   }
@@ -63,14 +94,18 @@ class AuthErrorView extends StatelessWidget {
     return Scaffold(
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(24.0),
+          padding: const EdgeInsets.all(24),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.error_outline, size: 80, color: Colors.redAccent),
+              const Icon(
+                Icons.error_outline,
+                size: 80,
+                color: Colors.redAccent,
+              ),
               const SizedBox(height: 20),
               Text(
-                "حدث خطأ أثناء تحميل البيانات",
+                'حدث خطأ أثناء تحميل البيانات',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 22,
@@ -80,7 +115,8 @@ class AuthErrorView extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               Text(
-                errorMessage ?? "لم نتمكن من الوصول إلى بيانات حسابك. يرجى المحاولة مرة أخرى أو تسجيل الخروج.",
+                errorMessage ??
+                    'لم نتمكن من الوصول إلى بيانات حسابك. يرجى المحاولة مرة أخرى أو تسجيل الخروج.',
                 textAlign: TextAlign.center,
                 style: const TextStyle(fontSize: 16, color: Colors.grey),
               ),
@@ -95,7 +131,7 @@ class AuthErrorView extends StatelessWidget {
                   ),
                 ),
                 child: const Text(
-                  "إعادة المحاولة",
+                  'إعادة المحاولة',
                   style: TextStyle(
                     fontSize: 18,
                     color: Colors.white,
@@ -115,7 +151,7 @@ class AuthErrorView extends StatelessWidget {
                   ),
                 ),
                 child: const Text(
-                  "تسجيل الخروج",
+                  'تسجيل الخروج',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
               ),

@@ -12,17 +12,21 @@ class AppointmentInfoRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Flexible(
+        Expanded(
           child: Text(
             text,
             textAlign: TextAlign.right,
-            style: TextStyle(fontSize: 13, color: Colors.black87),
+            softWrap: true,
+            style: const TextStyle(
+              fontSize: 13,
+              color: Colors.black87,
+              height: 1.4,
+            ),
           ),
         ),
-
-        SizedBox(width: 8),
-
+        const SizedBox(width: 8),
         Icon(icon, size: 17, color: AppColors.primary),
       ],
     );

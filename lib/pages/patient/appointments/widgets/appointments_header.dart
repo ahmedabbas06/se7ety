@@ -10,16 +10,17 @@ class AppointmentsHeader extends StatelessWidget {
     return Container(
       width: double.infinity,
       height: 88,
+      alignment: Alignment.center,
       decoration: BoxDecoration(
         color: AppColors.primary,
-        borderRadius: BorderRadius.only(
+        borderRadius: const BorderRadius.only(
           bottomLeft: Radius.circular(20),
           bottomRight: Radius.circular(20),
         ),
       ),
-      alignment: Alignment.center,
-      child: Text(
+      child: const Text(
         'مواعيد الحجز',
+        textAlign: TextAlign.center,
         style: TextStyle(
           color: Colors.white,
           fontSize: 22,

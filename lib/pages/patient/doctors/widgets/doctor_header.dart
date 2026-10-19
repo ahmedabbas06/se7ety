@@ -8,35 +8,41 @@ class DoctorHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 88,
       width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(12, 12, 12, 22),
       decoration: BoxDecoration(
         color: AppColors.primary,
         borderRadius: const BorderRadius.only(
-          bottomLeft: Radius.circular(20),
-          bottomRight: Radius.circular(20),
+          bottomLeft: Radius.circular(26),
+          bottomRight: Radius.circular(26),
         ),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withValues(alpha: 0.15),
+            blurRadius: 14,
+            offset: const Offset(0, 5),
+          ),
+        ],
       ),
-      child: Stack(
-        alignment: Alignment.center,
+      child: Row(
         children: [
-          const Text(
-            'بيانات الدكتور',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
+          IconButton(
+            tooltip: 'رجوع',
+            onPressed: () => Navigator.maybePop(context),
+            icon: const Icon(Icons.arrow_forward, color: Colors.white),
+          ),
+          const Expanded(
+            child: Text(
+              'تفاصيل الدكتور',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 21,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
-          Positioned(
-            right: 10,
-            child: IconButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              icon: const Icon(Icons.arrow_forward, color: Colors.white),
-            ),
-          ),
+          const SizedBox(width: 48),
         ],
       ),
     );

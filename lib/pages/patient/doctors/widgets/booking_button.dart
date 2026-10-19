@@ -11,9 +11,14 @@ class BookingButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizedBox(
       width: double.infinity,
-      height: 55,
-      child: ElevatedButton(
+      height: 56,
+      child: ElevatedButton.icon(
         onPressed: onPressed,
+        icon: const Icon(Icons.calendar_month_outlined),
+        label: const Text(
+          'احجز موعد الآن',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primary,
           foregroundColor: Colors.white,
@@ -21,10 +26,6 @@ class BookingButton extends StatelessWidget {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(15),
           ),
-        ),
-        child: const Text(
-          'احجز موعد الآن',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
       ),
     );

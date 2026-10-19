@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/constants/app_colors.dart';
@@ -10,21 +11,59 @@ import '../appointments/appointments_page.dart';
 import '../doctors/doctor_details_page.dart';
 import '../profile/patient_profile_page.dart';
 
-class SearchPage extends StatefulWidget {
+class SearchPage extends StatelessWidget {
   const SearchPage({super.key});
 
   @override
-  State<SearchPage> createState() => _SearchPageState();
+  Widget build(BuildContext context) {
+    final existingProvider = Provider.of<HomeProvider?>(context, listen: false);
+
+    if (existingProvider != null) {
+      return SearchPageContent(homeProvider: existingProvider);
+    }
+
+    return ChangeNotifierProvider<HomeProvider>(
+      create: (_) => HomeProvider()..getDoctors(),
+      child: const SearchPageContent(),
+    );
+  }
 }
 
-class _SearchPageState extends State<SearchPage> {
+class SearchPageContent extends StatefulWidget {
+  const SearchPageContent({super.key, this.homeProvider});
+
+  final HomeProvider? homeProvider;
+
+  @override
+  State<SearchPageContent> createState() => _SearchPageContentState();
+}
+
+class _SearchPageContentState extends State<SearchPageContent> {
   final TextEditingController searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    final homeProvider = Provider.of<HomeProvider>(context, listen: false);
-    searchController.text = homeProvider.searchQuery;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+
+      final homeProvider =
+          widget.homeProvider ??
+          Provider.of<HomeProvider>(context, listen: false);
+
+      searchController.text = homeProvider.searchQuery;
+
+      if (homeProvider.doctors.isEmpty &&
+          !homeProvider.isLoading &&
+          homeProvider.errorMessage == null) {
+        homeProvider.getDoctors();
+      }
+
+      if (mounted) {
+        setState(() {});
+      }
+    });
   }
 
   @override
@@ -43,78 +82,111 @@ class _SearchPageState extends State<SearchPage> {
             child: Column(
               children: [
                 const SearchHeader(),
-
                 const SizedBox(height: 15),
-
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: SearchField(
                     controller: searchController,
-                    onChanged: (value) {
-                      homeProvider.searchDoctors(value);
-                    },
+                    onChanged: homeProvider.searchDoctors,
                     onClear: () {
                       searchController.clear();
-                      homeProvider.searchDoctors("");
+                      homeProvider.searchDoctors('');
+                      setState(() {});
                     },
                   ),
                 ),
-
                 const SizedBox(height: 20),
-
-                Expanded(
-                  child: homeProvider.isLoading
-                      ? const Center(child: CircularProgressIndicator())
-                      : homeProvider.errorMessage != null
-                      ? Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                homeProvider.errorMessage!,
-                                style: const TextStyle(color: Colors.red),
-                              ),
-                              const SizedBox(height: 10),
-                              ElevatedButton(
-                                onPressed: () => homeProvider.getDoctors(),
-                                child: const Text("إعادة المحاولة"),
-                              ),
-                            ],
-                          ),
-                        )
-                      : homeProvider.filteredDoctors.isEmpty
-                      ? const Center(
-                          child: Text(
-                            "لا توجد نتائج بحث مطابقة",
-                            style: TextStyle(fontSize: 16, color: Colors.grey),
-                          ),
-                        )
-                      : ListView.separated(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          itemCount: homeProvider.filteredDoctors.length,
-                          separatorBuilder: (context, index) =>
-                              const SizedBox(height: 10),
-                          itemBuilder: (context, index) {
-                            final doctor = homeProvider.filteredDoctors[index];
-                            return DoctorSearchCard(
-                              doctor: doctor,
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) =>
-                                        DoctorDetailsPage(doctor: doctor),
-                                  ),
-                                );
-                              },
-                            );
-                          },
-                        ),
-                ),
+                Expanded(child: _buildSearchResults(homeProvider)),
               ],
             ),
           ),
           bottomNavigationBar: const SearchBottomNavigation(),
+        );
+      },
+    );
+  }
+
+  Widget _buildSearchResults(HomeProvider homeProvider) {
+    if (homeProvider.isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (homeProvider.errorMessage != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.cloud_off_outlined, size: 50, color: Colors.red),
+              const SizedBox(height: 12),
+              Text(
+                homeProvider.errorMessage!,
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Colors.red, fontSize: 15),
+              ),
+              const SizedBox(height: 12),
+              ElevatedButton.icon(
+                onPressed: homeProvider.getDoctors,
+                icon: const Icon(Icons.refresh),
+                label: const Text('إعادة المحاولة'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (homeProvider.filteredDoctors.isEmpty) {
+      return ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        children: [
+          const SizedBox(height: 60),
+          SvgPicture.asset('assets/no-search.svg', height: 160),
+          const SizedBox(height: 20),
+          Text(
+            searchController.text.trim().isEmpty
+                ? 'لا يوجد أطباء متاحون حالياً'
+                : 'لا توجد نتائج بحث مطابقة',
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
+          ),
+          if (searchController.text.trim().isNotEmpty) ...[
+            const SizedBox(height: 8),
+            const Text(
+              'جرّب البحث باسم الدكتور أو التخصص',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 13, color: Colors.grey),
+            ),
+          ],
+        ],
+      );
+    }
+
+    return ListView.separated(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      itemCount: homeProvider.filteredDoctors.length,
+      separatorBuilder: (context, index) {
+        return const SizedBox(height: 10);
+      },
+      itemBuilder: (context, index) {
+        final doctor = homeProvider.filteredDoctors[index];
+
+        return DoctorSearchCard(
+          doctor: doctor,
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => DoctorDetailsPage(doctor: doctor),
+              ),
+            );
+          },
         );
       },
     );
@@ -191,9 +263,7 @@ class SearchField extends StatelessWidget {
             ),
             child: const Icon(Icons.search, color: Colors.white),
           ),
-
           const SizedBox(width: 10),
-
           Expanded(
             child: TextField(
               controller: controller,
@@ -227,82 +297,92 @@ class DoctorSearchCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        height: 65,
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-        decoration: BoxDecoration(
-          color: const Color(0xFFE2F2FC),
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 50,
-              height: 50,
-              decoration: BoxDecoration(
-                color: const Color(0xFFB7E8A5),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: doctor.image != null && doctor.image!.isNotEmpty
-                    ? Image.network(
-                        doctor.image!,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) =>
-                            const Icon(
+    final hasImage = doctor.image != null && doctor.image!.trim().isNotEmpty;
+
+    final hasSpeciality =
+        doctor.speciality != null && doctor.speciality!.trim().isNotEmpty;
+
+    return Material(
+      color: const Color(0xFFE2F2FC),
+      borderRadius: BorderRadius.circular(10),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(10),
+        child: Container(
+          constraints: const BoxConstraints(minHeight: 72),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+          child: Row(
+            children: [
+              Container(
+                width: 50,
+                height: 50,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFB7E8A5),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: hasImage
+                      ? Image.network(
+                          doctor.image!,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return const Icon(
                               Icons.person,
                               size: 32,
                               color: Colors.white,
-                            ),
-                      )
-                    : const Icon(Icons.person, size: 32, color: Colors.white),
+                            );
+                          },
+                        )
+                      : const Icon(Icons.person, size: 32, color: Colors.white),
+                ),
               ),
-            ),
-
-            const SizedBox(width: 10),
-
-            Expanded(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    doctor.name,
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.primary,
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      doctor.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.right,
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.primary,
+                      ),
                     ),
-                  ),
-
-                  const SizedBox(height: 2),
-
-                  Text(
-                    doctor.speciality ?? 'غير محدد',
-                    style: const TextStyle(fontSize: 12, color: Colors.black87),
-                  ),
-                ],
+                    if (hasSpeciality) ...[
+                      const SizedBox(height: 3),
+                      Text(
+                        doctor.speciality!,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.right,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.black87,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
               ),
-            ),
-
-            const SizedBox(width: 8),
-
-            Row(
-              children: [
+              if (doctor.rating != null) ...[
+                const SizedBox(width: 8),
                 const Icon(Icons.star, color: Colors.orange, size: 17),
-
                 const SizedBox(width: 2),
-
                 Text(
-                  (doctor.rating ?? 0.0).toStringAsFixed(1),
+                  doctor.rating!.toStringAsFixed(1),
                   style: const TextStyle(fontSize: 12),
                 ),
               ],
-            ),
-          ],
+              const SizedBox(width: 4),
+              Icon(Icons.arrow_forward_ios, size: 14, color: AppColors.primary),
+            ],
+          ),
         ),
       ),
     );
@@ -314,78 +394,82 @@ class SearchBottomNavigation extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 70,
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.10),
-            blurRadius: 10,
-            offset: const Offset(0, -3),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          IconButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => ChangeNotifierProvider<ProfileProvider>(
-                    create: (_) => ProfileProvider(),
-                    child: const PatientProfilePage(),
-                  ),
-                ),
-              );
-            },
-            icon: const Icon(Icons.person_outline),
-          ),
-
-          IconButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => ChangeNotifierProvider<AppointmentProvider>(
-                    create: (_) => AppointmentProvider(),
-                    child: const AppointmentsPage(),
-                  ),
-                ),
-              );
-            },
-            icon: const Icon(Icons.calendar_month_outlined),
-          ),
-
-          Container(
-            width: 100,
-            height: 50,
-            decoration: BoxDecoration(
-              color: AppColors.primary,
-              borderRadius: BorderRadius.circular(25),
+    return SafeArea(
+      top: false,
+      child: Container(
+        height: 70,
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.10),
+              blurRadius: 10,
+              offset: const Offset(0, -3),
             ),
-            child: const Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.search, color: Colors.white),
-                SizedBox(width: 5),
-                Text(
-                  'البحث',
-                  style: TextStyle(color: Colors.white, fontSize: 14),
-                ),
-              ],
+          ],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            IconButton(
+              tooltip: 'الملف الشخصي',
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ChangeNotifierProvider<ProfileProvider>(
+                      create: (_) => ProfileProvider(),
+                      child: const PatientProfilePage(),
+                    ),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.person_outline),
             ),
-          ),
-
-          IconButton(
-            onPressed: () =>
-                Navigator.popUntil(context, (route) => route.isFirst),
-            icon: const Icon(Icons.home_outlined),
-          ),
-        ],
+            IconButton(
+              tooltip: 'المواعيد',
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ChangeNotifierProvider<AppointmentProvider>(
+                      create: (_) => AppointmentProvider(),
+                      child: const AppointmentsPage(),
+                    ),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.calendar_month_outlined),
+            ),
+            Container(
+              width: 100,
+              height: 50,
+              decoration: BoxDecoration(
+                color: AppColors.primary,
+                borderRadius: BorderRadius.circular(25),
+              ),
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.search, color: Colors.white),
+                  SizedBox(width: 5),
+                  Text(
+                    'البحث',
+                    style: TextStyle(color: Colors.white, fontSize: 14),
+                  ),
+                ],
+              ),
+            ),
+            IconButton(
+              tooltip: 'الرئيسية',
+              onPressed: () {
+                Navigator.popUntil(context, (route) => route.isFirst);
+              },
+              icon: const Icon(Icons.home_outlined),
+            ),
+          ],
+        ),
       ),
     );
   }
